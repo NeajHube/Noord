@@ -1,1 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo de Tiro Mobile - Zoando o Erik</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            touch-action: none; /* Evita zoom/pan no toque */
+        }
+        #game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        #canvas {
+            width: 100%;
+            height: 60%; /* Canvas ocupa 60% da tela */
+            border-bottom: 2px solid #00ff00;
+            background: #000;
+        }
+        #chat-container {
+            flex: 1;
+            background: #222;
+            padding: 10px;
+            overflow-y: auto;
+            height: 40%; /* Chat ocupa 40% da tela */
+        }
+        #chat {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #chat li {
+            margin: 8px 0;
+            padding: 8px;
+            background: #333;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #00ff00;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            color: #00ff00;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px;
+            border-radius: 3px;
+        }
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            margin: 5px 0;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        <div id="chat-container">
+            <h1>Chat Zoando o Erik</h1>
+            <ul id="chat"></ul>
+        </div>
+    </div>
+    <div id="score">Pontos: 0</div>
 
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const chat = document.getElementById('chat');
+        const scoreDisplay = document.getElementById('score');
+
+        // Ajusta o canvas para o tamanho da tela
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight * 0.6; // 60% da altura
+
+        let score = 0;
+        let target = { x: Math.random() * (canvas.width - 50), y: Math.random() * (canvas.height - 50), radius: 25 };
+        let crosshair = { x: canvas.width / 2, y: canvas.height / 2, radius: 15 };
+
+        // Frases zoeiras contra o Erik
+        const zoeiras = [
+            "Erik, tu joga com o dedão ou com o cotovelo? 🤡",
+            "Mano, o Erik errou de novo, que surpresa! 😜",
+            "Erik, vai jogar Free Fire que é mais tua praia! 😅",
+            "Tá osso, Erik? Pede pro teu primo te ensinar! 😂",
+            "Erik, o alvo tá rindo da tua mira! 😭",
+            "Erik tentando acertar é tipo comédia ao vivo! 😈",
+            "Mano, desiste, Erik, isso não é pra ti! 😝",
+            "Erik, tu tá mirando com a tela apagada? 🕶️",
+            "Erik, tu já acertou algo além de bronca da mãe? 😎",
+            "Relaxa, Erik, ninguém acha que tu vai acertar mesmo! 😏"
+        ];
+
+        // Adiciona mensagem no chat
+        function addChatMessage() {
+            const message = zoeiras[Math.floor(Math.random() * zoeiras.length)];
+            const li = document.createElement('li');
+            li.textContent = message;
+            chat.appendChild(li);
+            chat.scrollTop = chat.scrollHeight; // Auto-scroll
+        }
+
+        // Movimento do alvo
+        function moveTarget() {
+            target.x += (Math.random() - 0.5) * 8;
+            target.y += (Math.random() - 0.5) * 8;
+
+            // Mantém o alvo dentro do canvas
+            target.x = Math.max(target.radius, Math.min(canvas.width - target.radius, target.x));
+            target.y = Math.max(target.radius, Math.min(canvas.height - target.radius, target.y));
+        }
+
+        // Desenha o jogo
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenha o alvo
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff0000';
+            ctx.fill();
+            ctx.closePath();
+
+            // Desenha a mira
+            ctx.beginPath();
+            ctx.arc(crosshair.x, crosshair.y, crosshair.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        // Verifica colisão
+        function checkHit(x, y) {
+            const dx = x - target.x;
+            const dy = y - target.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < target.radius + crosshair.radius;
+        }
+
+        // Atualiza pontuação
+        function updateScore() {
+            scoreDisplay.textContent = `Pontos: ${score}`;
+        }
+
+        // Controle por toque
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            crosshair.x = touch.clientX - rect.left;
+            crosshair.y = touch.clientY - rect.top;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (checkHit(x, y)) {
+                score += 10;
+                target.x = Math.random() * (canvas.width - 50);
+                target.y = Math.random() * (canvas.height - 50);
+                addChatMessage(); // Zoeira ao acertar
+            } else {
+                addChatMessage(); // Zoeira ao errar
+            }
+            updateScore();
+        });
+
+        // Loop principal
+        function gameLoop() {
+            moveTarget();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Inicia o chat com uma zoação
+        addChatMessage();
+        setInterval(addChatMessage, 5000); // Nova zoação a cada 5 segundos
+        gameLoop();
+    </script>
+</body>
+</html>
